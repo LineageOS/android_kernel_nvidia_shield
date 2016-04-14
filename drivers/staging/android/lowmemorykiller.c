@@ -44,6 +44,8 @@
 #include <linux/nvmap.h>
 #endif
 
+#include <linux/zcache.h>
+
 #define CREATE_TRACE_POINTS
 #include <trace/events/lowmemorykiller.h>
 
@@ -103,7 +105,7 @@ static int lowmem_shrink(struct shrinker *s, struct shrink_control *sc)
 			 + nvmap_page_pool_get_unused_pages()
 #endif
 			 ;
-	int other_file = global_page_state(NR_FILE_PAGES)
+	int other_file = global_page_state(NR_FILE_PAGES) + zcache_pages() -
 			- global_page_state(NR_SHMEM)
 			- global_page_state(NR_FILE_MAPPED)
 			- total_swapcache_pages();
@@ -186,7 +188,8 @@ static int lowmem_shrink(struct shrinker *s, struct shrink_control *sc)
 				"Killing '%s' (%d), adj %hd,\n" \
 				"   to free %ldkB on behalf of '%s' (%d) because\n" \
 				"   cache %ldkB is below limit %ldkB for oom_score_adj %hd\n" \
-				"   Free memory is %ldkB above reserved\n",
+				"   Free memory is %ldkB above reserved\n", \
+                               "   Total zcache is %ldkB\n"
 			     selected->comm, selected->pid,
 			     selected_oom_score_adj,
 			     selected_tasksize * (long)(PAGE_SIZE / 1024),
@@ -194,7 +197,8 @@ static int lowmem_shrink(struct shrinker *s, struct shrink_control *sc)
 			     other_file * (long)(PAGE_SIZE / 1024),
 			     minfree * (long)(PAGE_SIZE / 1024),
 			     min_score_adj,
-			     other_free * (long)(PAGE_SIZE / 1024));
+			     other_free * (long)(PAGE_SIZE / 1024)),
+			     (long)zcache_pages() * (long)(PAGE_SIZE / 1024);
 		lowmem_deathpending_timeout = jiffies + HZ;
 		lowmem_send_sig(selected, jiffies_sigkill_ts);
 		set_tsk_thread_flag(selected, TIF_MEMDIE);
