@@ -836,34 +836,6 @@ int nvi_user_ctrl_en(struct nvi_state *st, const char *fn,
 		} else {
 			en_fifo = false;
 		}
-		if (n > 1) {
-			ret |= nvi_wr_fifo_cfg(st, 0);
-			ret |= nvi_wr_fifo_sz(st, 0x0F);
-		} else if (n == 1) {
-			ret |= nvi_wr_fifo_cfg(st, -1);
-			ret |= nvi_wr_fifo_sz(st, 0x01);
-		} else {
-			en_fifo = false;
-		}
-	}
-	ret |= nvi_i2c_write_rc(st, &st->hal->reg->fifo_en, val,
-				__func__, (u8 *)&st->rc.fifo_en, false);
-	if (!ret) {
-		val = 0;
-		if (en_dmp)
-			val |= BIT_DMP_EN;
-		if (en_fifo)
-			val |= BIT_FIFO_EN;
-		if (en_i2c && (st->en_msk & (1 << DEV_AUX)))
-			val |= BIT_I2C_MST_EN;
-		else
-			en_i2c = false;
-		if (en_irq && val)
-			ret = nvi_int_able(st, __func__, true);
-		else
-			en_irq = false;
-		ret |= nvi_i2c_wr_rc(st, &st->hal->reg->user_ctrl, val,
-				     __func__, &st->rc.user_ctrl);
 	}
 	ret |= nvi_i2c_write_rc(st, &st->hal->reg->fifo_en, val,
 				__func__, (u8 *)&st->rc.fifo_en, false);
@@ -2282,7 +2254,6 @@ static int nvi_push(struct nvi_state *st, unsigned int dev, u8 *buf, s64 ts)
 			}
 		}
 	}
-}
 
 	/* extend sign bit */
 	i = (sizeof(val_le[0]) - n) * 8;
@@ -2707,33 +2678,7 @@ static int nvi_rd(struct nvi_state *st)
 		}
 	}
 
-	return ret;
-}
-
-static int nvi_thresh_hi(void *client, int snsr_id, int thresh_hi)
-{
-	struct nvi_state *st = (struct nvi_state *)client;
-	int ret = 1;
-
-	switch (snsr_id) {
-	case DEV_ACC:
-		if (thresh_hi > 0)
-			st->en_msk |= (1 << EN_LP);
-		else
-			st->en_msk &= ~(1 << EN_LP);
-		return 1;
-
-	case DEV_SM:
-		st->snsr[DEV_SM].cfg.thresh_hi = thresh_hi;
-		if (st->en_msk & (1 << DEV_DMP))
-			ret = st->hal->dmp->fn_dev_init(st, snsr_id);
-		return ret;
-
-	default:
-		return -EINVAL;
-	}
-
-	return ret;
+	return 0;
 }
 
 static int nvi_read(struct nvi_state *st, bool flush)
@@ -2848,7 +2793,6 @@ static int nvi_batch(void *client, int snsr_id, int flags,
 			nvi_en(st);
 	}
 
-	st->info = nvs;
 	return 0;
 }
 
@@ -3421,11 +3365,6 @@ static int nvi_id_dev(struct nvi_state *st,
 				__func__);
 			return -ENODEV;
 		}
-	}
-	nvi_pm_init(st);
-	ret = nvi_id_dev(st, i2c_dev_id);
-	if (ret)
-		return ret;
 
 		ret = nvi_id2hal(st, hw_id);
 		if (ret < 0) {
@@ -3467,11 +3406,6 @@ static int nvi_id_dev(struct nvi_state *st,
 		st->snsr[dev].cfg.milliamp.fval =
 					      st->hal->dev[dev]->milliamp.fval;
 	}
-	nvi_nvs_fn.sts = &st->sts;
-	nvi_nvs_fn.errs = &st->errs;
-	st->nvs = nvs_iio();
-	if (st->nvs == NULL)
-		return -ENODEV;
 
 #define SRM				(SENSOR_FLAG_SPECIAL_REPORTING_MODE)
 #define OSM				(SENSOR_FLAG_ONE_SHOT_MODE)

@@ -311,7 +311,6 @@ struct nvi_dmp_dev {
 	u8 hdr[DMP_HDR_LEN_MAX];
 	u8 hdr_msk[DMP_HDR_LEN_MAX];
 	int (*fn_init)(struct nvi_state *st);
-	int (*fn_push)(struct nvi_state *st, u8 *buf);
 	union {
 		struct nvi_dmp_icm icm;
 		struct nvi_dmp_mpu mpu;
