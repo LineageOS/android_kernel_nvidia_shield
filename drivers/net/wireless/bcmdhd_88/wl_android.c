@@ -86,6 +86,7 @@
 #define CMD_P2P_DEV_ADDR	"P2P_DEV_ADDR"
 #define CMD_SETFWPATH		"SETFWPATH"
 #define CMD_SETBAND		"SETBAND"
+#define CMD_UPDATE_CHANNEL_LIST "UPDATE_CHANNEL_LIST"
 #define CMD_GETBAND		"GETBAND"
 #define CMD_COUNTRY		"COUNTRY"
 #define CMD_NV_COUNTRY         "NV_COUNTRY"
@@ -712,6 +713,7 @@ int wl_android_wifi_on(struct net_device *dev)
 			DHD_ERROR(("\nfailed to power up wifi chip, retry again (%d left) **\n\n",
 				retry+1));
 			dhd_customer_gpio_wlan_ctrl(WLAN_RESET_OFF);
+			OSL_SLEEP(500 * (POWERUP_MAX_RETRY - retry + 1));
 		} while (retry-- >= 0);
 		if (ret != 0) {
 			DHD_ERROR(("\nfailed to power up wifi chip, max retry reached **\n\n"));
@@ -1350,6 +1352,11 @@ int wl_android_priv_cmd(struct net_device *net, struct ifreq *ifr, int cmd)
 		ret = -EINVAL;
 		goto exit;
 	}
+	if (!capable(CAP_NET_ADMIN)) {
+		ret = -EPERM;
+		goto exit;
+	}
+
 	if (copy_from_user(&priv_cmd, ifr->ifr_data, sizeof(android_wifi_priv_cmd))) {
 		ret = -EFAULT;
 		goto exit;
@@ -1457,6 +1464,12 @@ int wl_android_priv_cmd(struct net_device *net, struct ifreq *ifr, int cmd)
 	else if (strnicmp(command, CMD_SETBAND, strlen(CMD_SETBAND)) == 0) {
 		uint band = *(command + strlen(CMD_SETBAND) + 1) - '0';
 		bytes_written = wldev_set_band(net, band);
+	} else if (strnicmp(command, CMD_UPDATE_CHANNEL_LIST,
+			strlen(CMD_UPDATE_CHANNEL_LIST)) == 0) {
+#ifdef WL_CFG80211
+		wl_update_wiphybands(NULL, true);
+#endif
+		bytes_written = 0;
 	}
 	else if (strnicmp(command, CMD_GETBAND, strlen(CMD_GETBAND)) == 0) {
 		bytes_written = wl_android_get_band(net, command, priv_cmd.total_len);
