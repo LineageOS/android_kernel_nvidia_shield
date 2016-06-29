@@ -1,7 +1,7 @@
 /*
  * drivers/video/tegra/dc/hdmihdcp.c
  *
- * Copyright (c) 2014-2015, NVIDIA CORPORATION, All rights reserved.
+ * Copyright (c) 2014-2016, NVIDIA CORPORATION, All rights reserved.
  *
  * This software is licensed under the terms of the GNU General Public
  * License version 2, as published by the Free Software Foundation, and
@@ -50,6 +50,9 @@
 
 static DECLARE_WAIT_QUEUE_HEAD(wq_worker);
 
+/* Print no more than 5 messages every minute */
+static DEFINE_RATELIMIT_STATE(ratelimit, 60*HZ, 5);
+
 /* for 0x40 Bcaps */
 #define BCAPS_REPEATER (1 << 6)
 #define BCAPS_READY (1 << 5)
@@ -66,13 +69,19 @@ static DECLARE_WAIT_QUEUE_HEAD(wq_worker);
 #define HDCP_MSG_SIZE_MASK		0x03FF
 #define HDCP22_PROTOCOL			1
 #define HDCP1X_PROTOCOL			0
-#define HDCP_MAX_RETRIES		5
-#define HDCP_MIN_RETRIES		0
+#define HDCP_INFINITE_RETRIES		-1
 #define HDCP_DEBUG                      0
 #define SEQ_NUM_M_MAX_RETRIES		1
 
 #define HDCP_FALLBACK_1X                0xdeadbeef
 #define HDCP_NON_22_RX                  0x0300
+
+#define HDCP_EESS_ENABLE		(0x1)
+#define HDCP22_EESS_START		(0x201)
+#define HDCP22_EESS_END			(0x211)
+#define HDCP1X_EESS_START		(0x200)
+#define HDCP1X_EESS_END			(0x210)
+#define HDMI_VSYNC_WINDOW		(0xc2)
 
 #ifdef VERBOSE_DEBUG
 #define nvhdcp_vdbg(...)	\
@@ -88,7 +97,8 @@ static DECLARE_WAIT_QUEUE_HEAD(wq_worker);
 #define nvhdcp_debug(...)	\
 		pr_debug("nvhdcp: " __VA_ARGS__)
 #define nvhdcp_err(...)	\
-		pr_err("nvhdcp: Error: " __VA_ARGS__)
+		if (__ratelimit(&ratelimit)) \
+			pr_err("nvhdcp: Error: " __VA_ARGS__)
 #define nvhdcp_info(...)	\
 		pr_info("nvhdcp: " __VA_ARGS__)
 
@@ -1474,14 +1484,15 @@ static void nvhdcp_downstream_worker(struct work_struct *work)
 
 failure:
 	nvhdcp->fail_count++;
-	if (nvhdcp->fail_count > nvhdcp->max_retries) {
-		nvhdcp_err("nvhdcp failure - too many failures, giving up!\n");
-	} else {
+	if (nvhdcp->max_retries <= HDCP_INFINITE_RETRIES ||
+		nvhdcp->fail_count < nvhdcp->max_retries) {
 		nvhdcp_err("nvhdcp failure - renegotiating in 1 second\n");
 		if (!nvhdcp_is_plugged(nvhdcp))
 			goto lost_hdmi;
 		queue_delayed_work(nvhdcp->downstream_wq, &nvhdcp->work,
 						msecs_to_jiffies(1000));
+	} else {
+		nvhdcp_err("nvhdcp failure - too many failures, giving up!\n");
 	}
 
 lost_hdmi:
@@ -1651,14 +1662,15 @@ static void nvhdcp2_downstream_worker(struct work_struct *work)
 failure:
 
 	nvhdcp->fail_count++;
-	if (nvhdcp->fail_count > nvhdcp->max_retries) {
-		nvhdcp_err("nvhdcp failure - too many failures, giving up!\n");
-	} else {
+	if (nvhdcp->max_retries <= HDCP_INFINITE_RETRIES ||
+		nvhdcp->fail_count < nvhdcp->max_retries) {
 		nvhdcp_err("nvhdcp failure - renegotiating in 1 second\n");
 		if (!nvhdcp_is_plugged(nvhdcp))
 			goto lost_hdmi;
 		queue_delayed_work(nvhdcp->downstream_wq, &nvhdcp->work,
 						msecs_to_jiffies(1000));
+	} else {
+		nvhdcp_err("nvhdcp failure - too many failures, giving up!\n");
 	}
 
 lost_hdmi:
@@ -1676,6 +1688,7 @@ static int tegra_nvhdcp_on(struct tegra_nvhdcp *nvhdcp)
 {
 	u8 hdcp2version = 0;
 	int e;
+	int val;
 	nvhdcp->state = STATE_UNAUTHENTICATED;
 	if (nvhdcp_is_plugged(nvhdcp) &&
 		atomic_read(&nvhdcp->policy) !=
@@ -1688,15 +1701,30 @@ static int tegra_nvhdcp_on(struct tegra_nvhdcp *nvhdcp)
 		/* HDCP 1.x test 1A-04 expects reading HDCP regs */
 		if (hdcp2version & HDCP_HDCP2_VERSION_HDCP22_YES) {
 			if (g_fallback) {
+				val = HDCP_EESS_ENABLE<<31|
+					HDCP1X_EESS_START<<16|
+					HDCP1X_EESS_END;
+				nvhdcp_sor_writel(nvhdcp->hdmi, val,
+							HDMI_VSYNC_WINDOW);
 				INIT_DELAYED_WORK(&nvhdcp->work,
 					nvhdcp_downstream_worker);
 				nvhdcp->hdcp22 = HDCP1X_PROTOCOL;
 			} else {
+				val = HDCP_EESS_ENABLE<<31|
+					HDCP22_EESS_START<<16|
+					HDCP22_EESS_END;
+				nvhdcp_sor_writel(nvhdcp->hdmi, val,
+							HDMI_VSYNC_WINDOW);
 				INIT_DELAYED_WORK(&nvhdcp->work,
 					nvhdcp2_downstream_worker);
 				nvhdcp->hdcp22 = HDCP22_PROTOCOL;
 			}
 		} else {
+			val = HDCP_EESS_ENABLE<<31|
+				HDCP1X_EESS_START<<16|
+				HDCP1X_EESS_END;
+			nvhdcp_sor_writel(nvhdcp->hdmi, val,
+							HDMI_VSYNC_WINDOW);
 			INIT_DELAYED_WORK(&nvhdcp->work,
 				nvhdcp_downstream_worker);
 			nvhdcp->hdcp22 = HDCP1X_PROTOCOL;
@@ -1930,7 +1958,7 @@ struct tegra_nvhdcp *tegra_nvhdcp_create(struct tegra_hdmi *hdmi,
 	nvhdcp->info.addr = 0x74 >> 1;
 	nvhdcp->info.platform_data = nvhdcp;
 	nvhdcp->fail_count = 0;
-	nvhdcp->max_retries = HDCP_MAX_RETRIES;
+	nvhdcp->max_retries = HDCP_INFINITE_RETRIES;
 	atomic_set(&nvhdcp->policy, hdmi->dc->pdata->default_out->hdcp_policy);
 
 	adapter = i2c_get_adapter(bus);
@@ -2003,10 +2031,10 @@ static int tegra_nvhdcp_max_retries_dbg_show(struct seq_file *m, void *unused)
 
 /*
  * sw control for hdcp max retries.
- * 5 is the normal number of max retries.
- * 1 is the minimum number of retries.
- * 5 is the maximum number of retries.
- * sw should keep the number of retries to 5 until unless a change is required
+ * -1 is the default value which indicates infinite retries
+ * If a non-infinite value is desired, set max_retries to a non-negative
+ *  integer
+ * 0 is the minimum number of retries.
  */
 static ssize_t tegra_nvhdcp_max_retries_dbg_write(struct file *file,
 						const char __user *addr,
@@ -2024,9 +2052,7 @@ static ssize_t tegra_nvhdcp_max_retries_dbg_write(struct file *file,
 	if (ret < 0)
 		return ret;
 
-	if (new_max_retries >= HDCP_MIN_RETRIES &&
-		new_max_retries <= HDCP_MAX_RETRIES)
-		hdcp->max_retries = new_max_retries;
+	hdcp->max_retries = new_max_retries;
 
 	return len;
 }

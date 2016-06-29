@@ -893,7 +893,7 @@ static void gk20a_fifo_abort_tsg(struct gk20a *g, u32 tsgid)
 	mutex_lock(&tsg->ch_list_lock);
 	list_for_each_entry(ch, &tsg->ch_list, ch_entry) {
 		if (gk20a_channel_get(ch)) {
-			gk20a_channel_abort(ch);
+			gk20a_channel_abort(ch, false);
 			gk20a_channel_put(ch);
 		}
 	}
@@ -1053,21 +1053,16 @@ static bool gk20a_fifo_handle_mmu_fault(
 				verbose =
 				       gk20a_fifo_set_ctx_mmu_error_tsg(g, tsg);
 
-			gk20a_fifo_abort_tsg(g, ch->tsgid);
+			gk20a_fifo_abort_tsg(g, tsg->tsgid);
 
 			/* put back the ref taken early above */
-			if (referenced_channel) {
+			if (referenced_channel)
 				gk20a_channel_put(ch);
-			} else {
-				gk20a_err(dev_from_gk20a(g),
-						"mmu error in freed tsg channel %d on tsgid %d",
-						ch->hw_chid, ch->tsgid);
-			}
 		} else if (ch) {
 			if (referenced_channel) {
 				if (!g->fifo.deferred_reset_pending)
 					verbose = gk20a_fifo_set_ctx_mmu_error_ch(g, ch);
-				gk20a_channel_abort(ch);
+				gk20a_channel_abort(ch, false);
 				gk20a_channel_put(ch);
 			} else {
 				gk20a_err(dev_from_gk20a(g),
@@ -1221,7 +1216,7 @@ void gk20a_fifo_recover_ch(struct gk20a *g, u32 hw_chid, bool verbose)
 		struct channel_gk20a *ch = &g->fifo.channel[hw_chid];
 
 		if (gk20a_channel_get(ch)) {
-			gk20a_channel_abort(ch);
+			gk20a_channel_abort(ch, false);
 
 			if (gk20a_fifo_set_ctx_mmu_error_ch(g, ch))
 				gk20a_debug_dump(g->dev);

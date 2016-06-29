@@ -375,7 +375,7 @@ void channel_gk20a_disable(struct channel_gk20a *ch)
 			ccsr_channel_enable_clr_true_f());
 }
 
-void gk20a_channel_abort(struct channel_gk20a *ch)
+void gk20a_channel_abort(struct channel_gk20a *ch, bool channel_preempt)
 {
 	struct channel_gk20a_job *job, *n;
 	bool released_job_semaphore = false;
@@ -384,6 +384,11 @@ void gk20a_channel_abort(struct channel_gk20a *ch)
 
 	/* make sure new kickoffs are prevented */
 	ch->has_timedout = true;
+
+	ch->g->ops.fifo.disable_channel(ch);
+
+	if (channel_preempt)
+		ch->g->ops.fifo.preempt_channel(ch->g, ch->hw_chid);
 
 	/* ensure no fences are pending */
 	mutex_lock(&ch->sync_lock);
@@ -402,12 +407,10 @@ void gk20a_channel_abort(struct channel_gk20a *ch)
 	}
 	mutex_unlock(&ch->jobs_lock);
 
-	ch->g->ops.fifo.disable_channel(ch);
-
-	if (released_job_semaphore) {
+	if (released_job_semaphore)
 		wake_up_interruptible_all(&ch->semaphore_wq);
-		gk20a_channel_update(ch, 0);
-	}
+
+	gk20a_channel_update(ch, 0);
 }
 
 int gk20a_wait_channel_idle(struct channel_gk20a *ch)
@@ -448,12 +451,9 @@ void gk20a_disable_channel(struct channel_gk20a *ch,
 	}
 
 	/* disable the channel from hw and increment syncpoints */
-	gk20a_channel_abort(ch);
+	gk20a_channel_abort(ch, true);
 
 	gk20a_wait_channel_idle(ch);
-
-	/* preempt the channel */
-	ch->g->ops.fifo.preempt_channel(ch->g, ch->hw_chid);
 
 	/* remove channel from runlist */
 	channel_gk20a_update_runlist(ch, false);
@@ -1575,12 +1575,14 @@ void gk20a_channel_update(struct channel_gk20a *c, int nr_completed)
 
 	trace_gk20a_channel_update(c->hw_chid);
 
-	update_gp_get(c->g, c);
-	wake_up(&c->submit_wq);
+	if (!c->g->power_on) /* shutdown case */
+		return;
 
+	wake_up(&c->submit_wq);
 	mutex_lock(&c->submit_lock);
 
 	/* gp_put check needs to be done inside submit lock */
+	update_gp_get(c->g, c);
 	check_gp_put(c->g, c);
 
 	mutex_lock(&c->jobs_lock);

@@ -2037,6 +2037,7 @@ nvudc_ep_dequeue(struct usb_ep *_ep, struct usb_request *_req)
 	*/
 	if (!udc_req->first_trb) {
 		req_done(udc_ep, udc_req, -ECONNRESET);
+		spin_unlock_irqrestore(&nvudc->lock, flags);
 		return 0;
 	}
 
@@ -2102,6 +2103,7 @@ nvudc_ep_dequeue(struct usb_ep *_ep, struct usb_request *_req)
 		XHCI_SETF_VAR(EP_CX_DEQ_CYC_STATE, p_ep_cx->ep_dw2,
 						   udc_ep->pcs);
 		p_ep_cx->ep_dw3 = upper_32_bits(new_dq_pt);
+		udc_ep->deq_pt = tran_trb_dma_to_virt(udc_ep, new_dq_pt);
 
 		XHCI_SETF_VAR(EP_CX_EDTLA, p_ep_cx->ep_dw5, 0);
 		XHCI_SETF_VAR(EP_CX_PARTIALTD, p_ep_cx->ep_dw5, 0);

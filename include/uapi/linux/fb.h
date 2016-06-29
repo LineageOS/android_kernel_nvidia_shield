@@ -151,17 +151,41 @@
 
 #define FB_ACCEL_PUV3_UNIGFX	0xa0	/* PKUnity-v3 Unigfx		*/
 
-#define FB_CAP_FOURCC		1	/* Device supports FOURCC-based formats */
-#define FB_CAP_Y420_DC_30	2	/* YCbCr 4:2:0 deep color 30bpp */
-#define FB_CAP_Y420_DC_36	4	/* YCbCr 4:2:0 deep color 36bpp */
-#define FB_CAP_Y420_DC_48	8	/* YCbCr 4:2:0 deep color 48bpp */
-#define FB_CAP_HDR		16	/* Device supports HDR*/
+#define FB_CAP_FOURCC		0x0001	/* Device supports FOURCC-based formats */
+#define FB_CAP_Y420_DC_30	0x0002	/* YCbCr 4:2:0 deep color 30bpp */
+#define FB_CAP_Y420_DC_36	0x0004	/* YCbCr 4:2:0 deep color 36bpp */
+#define FB_CAP_Y420_DC_48	0x0008	/* YCbCr 4:2:0 deep color 48bpp */
+#define FB_CAP_DC_Y420_MASK		(FB_CAP_Y420_DC_30 | \
+				FB_CAP_Y420_DC_36 | FB_CAP_Y420_DC_48)
+
+#define FB_CAP_Y422_DC_30	0x0010	/* YCbCr 4:2:2 deep color 30bpp */
+#define FB_CAP_Y422_DC_36	0x0020	/* YCbCr 4:2:2 deep color 36bpp */
+#define FB_CAP_Y422_DC_48	0x0040	/* YCbCr 4:2:2 deep color 48bpp */
+#define FB_CAP_DC_Y422_MASK		(FB_CAP_Y422_DC_30 | \
+				FB_CAP_Y422_DC_36 | FB_CAP_Y422_DC_48)
+
+#define FB_CAP_Y444_DC_30	0x0080	/* YCbCr 4:4:4 deep color 30bpp */
+#define FB_CAP_Y444_DC_36	0x0100	/* YCbCr 4:4:4 deep color 36bpp */
+#define FB_CAP_Y444_DC_48	0x0200	/* YCbCr 4:4:4 deep color 48bpp */
+#define FB_CAP_DC_Y444_MASK		(FB_CAP_Y444_DC_30 | \
+				FB_CAP_Y444_DC_36 | FB_CAP_Y444_DC_48)
+
+#define FB_CAP_RGB_DC_30	0x0400	/* RGB 4:4:4 deep color 30bpp */
+#define FB_CAP_RGB_DC_36	0x0800	/* RGB 4:4:4 deep color 36bpp */
+#define FB_CAP_RGB_DC_48	0x1000	/* RGB 4:4:4 deep color 48bpp */
+#define FB_CAP_DC_RGB_MASK		(FB_CAP_RGB_DC_30 | \
+				FB_CAP_RGB_DC_36 | FB_CAP_RGB_DC_48)
+
+#define FB_CAP_Y422		0x2000	/* YCbCr 4:2:2 support */
+#define FB_CAP_Y444		0x4000	/* YCbCr 4:4:4 support */
+#define FB_CAP_HDR		0x8000	/* Device supports HDR*/
 /* Device supports overriding range for RGB modes */
-#define FB_CAP_RGB_QUANT_SELECTABLE		32
+#define FB_CAP_RGB_QUANT_SELECTABLE		0x10000
 /* Device supports overriding range for YUV modes */
-#define FB_CAP_YUV_QUANT_SELECTABLE		64
-#define FB_CAP_DC_MASK		(FB_CAP_Y420_DC_30 | \
-				FB_CAP_Y420_DC_36 | FB_CAP_Y420_DC_48 | \
+#define FB_CAP_YUV_QUANT_SELECTABLE		0x20000
+
+#define FB_CAP_DC_MASK		(FB_CAP_DC_Y420_MASK | FB_CAP_DC_Y422_MASK | \
+				FB_CAP_DC_Y444_MASK | FB_CAP_DC_RGB_MASK | \
 				FB_CAP_HDR | FB_CAP_RGB_QUANT_SELECTABLE | \
 				FB_CAP_YUV_QUANT_SELECTABLE)
 
@@ -252,18 +276,22 @@ struct fb_bitfield {
 					 */
 #define FB_VMODE_Y420_ONLY	0x0010	/* YCrCb 4:2:0 only supported */
 #define FB_VMODE_Y422		0x0020	/* select YCrCb 4:2:2 if setting mode */
+#define FB_VMODE_Y444		0x0040	/* select YCrCb 4:4:4 if setting mode */
 
-#define FB_VMODE_Y24		0x0100	/* select 8 bits per component YCrCb */
-#define FB_VMODE_Y30		0x0200	/* select 10 bits per component YCrCb */
+#define FB_VMODE_Y24		0x0100	/* select 24 bits per pixel */
+#define FB_VMODE_Y30		0x0200	/* select 30 bits per pixel */
+#define FB_VMODE_Y36		0x0400	/* select 36 bits per pixel */
+#define FB_VMODE_Y48		0x0800	/* select 48 bits per pixel */
 
 #define FB_VMODE_SET_YUV_MASK	(FB_VMODE_Y420 | FB_VMODE_Y422 | \
-				 FB_VMODE_Y24 | FB_VMODE_Y30)
+				FB_VMODE_Y444 | FB_VMODE_Y24 | FB_VMODE_Y30 | \
+				FB_VMODE_Y36 | FB_VMODE_Y48)
 
 #define FB_VMODE_YUV_MASK	(FB_VMODE_Y420_ONLY | FB_VMODE_SET_YUV_MASK)
 
 /* extended colorimetry */
-#define FB_VMODE_EC_ENABLE	0x400
-#define FB_VMODE_EC_SHIFT	11
+#define FB_VMODE_EC_ENABLE	0x1000
+#define FB_VMODE_EC_SHIFT	13
 #define FB_VMODE_EC_MASK	(0xf << FB_VMODE_EC_SHIFT)
 #define FB_VMODE_EC_XVYCC601	((0x0 << FB_VMODE_EC_SHIFT) & FB_VMODE_EC_MASK)
 #define FB_VMODE_EC_XVYCC709	((0x1 << FB_VMODE_EC_SHIFT) & FB_VMODE_EC_MASK)
@@ -276,21 +304,21 @@ struct fb_bitfield {
 #define FB_VMODE_EC_BT2020_YCC_RGB	((0x6 << FB_VMODE_EC_SHIFT) & \
 					FB_VMODE_EC_MASK)
 
-#define FB_VMODE_1000DIV1001	0x008000
-#define FB_VMODE_IS_DETAILED	0x080000
-#define FB_VMODE_IS_CEA		0x100000
-#define FB_VMODE_IS_HDMI_EXT	0x200000
-#define FB_VMODE_LIMITED_RANGE	0x400000
+#define FB_VMODE_1000DIV1001	0x020000
+#define FB_VMODE_IS_DETAILED	0x200000
+#define FB_VMODE_IS_CEA		0x400000
+#define FB_VMODE_IS_HDMI_EXT 	0x800000
+#define FB_VMODE_LIMITED_RANGE	0x10000000
 
 #define FB_VMODE_EDID_MASK	(FB_VMODE_1000DIV1001 | \
 				 FB_VMODE_IS_DETAILED | FB_VMODE_IS_CEA | \
 				 FB_VMODE_IS_HDMI_EXT)
 
-#define FB_VMODE_MASK		0x38ffff
+#define FB_VMODE_MASK		0x10e3ffff
 
-#define FB_VMODE_YWRAP		0x10000	/* ywrap instead of panning     */
-#define FB_VMODE_SMOOTH_XPAN	0x20000	/* smooth xpan possible (internally used) */
-#define FB_VMODE_CONUPDATE	0x40000	/* don't update x/yoffset	*/
+#define FB_VMODE_YWRAP		0x40000  /* ywrap instead of panning */
+#define FB_VMODE_SMOOTH_XPAN	0x80000  /* smooth xpan possible (internally used) */
+#define FB_VMODE_CONUPDATE	0x100000 /* don't update x/yoffset */
 
 #define FB_FLAG_RATIO_4_3	64
 #define FB_FLAG_RATIO_16_9	128
@@ -307,7 +335,7 @@ struct fb_bitfield {
 #define FB_VMODE_STEREO_FRAME_PACK  0x01000000  /* frame packing */
 #define FB_VMODE_STEREO_TOP_BOTTOM  0x02000000  /* top-bottom */
 #define FB_VMODE_STEREO_LEFT_RIGHT  0x04000000  /* left-right */
-#define FB_VMODE_STEREO_MASK        0xFF000000
+#define FB_VMODE_STEREO_MASK        0x07000000
 
 /*
  * Display rotation support

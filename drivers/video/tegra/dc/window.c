@@ -3,7 +3,7 @@
  *
  * Copyright (C) 2010 Google, Inc.
  *
- * Copyright (c) 2010-2015, NVIDIA CORPORATION, All rights reserved.
+ * Copyright (c) 2010-2016, NVIDIA CORPORATION, All rights reserved.
  *
  * This software is licensed under the terms of the GNU General Public
  * License version 2, as published by the Free Software Foundation, and
@@ -573,6 +573,7 @@ static int _tegra_dc_program_windows(struct tegra_dc *dc,
 	unsigned int yoff;
 	unsigned int width;
 	unsigned int height;
+	u32 val;
 
 	if (dirty_rect) {
 		xoff = dirty_rect[0];
@@ -632,24 +633,33 @@ static int _tegra_dc_program_windows(struct tegra_dc *dc,
 		if (!WIN_IS_ENABLED(win)) {
 		#define RGB_TO_YUV420_8BPC_BLACK_PIX 0x00801010
 		#define RGB_TO_YUV422_10BPC_BLACK_PIX 0x00001080
+		#define RGB_TO_YUV444_8BPC_BLACK_PIX 0x00801080
 
 			dc_win->dirty = no_vsync ? 0 : 1;
 			tegra_dc_writel(dc, 0, DC_WIN_WIN_OPTIONS);
 			if (dc->yuv_bypass) {
-				if (dc->mode.vmode &
-					(FB_VMODE_Y420 | FB_VMODE_Y420_ONLY |
-					 FB_VMODE_Y24))
+				switch(dc->mode.vmode & FB_VMODE_YUV_MASK) {
+				case FB_VMODE_Y420 | FB_VMODE_Y24:
+				case FB_VMODE_Y420_ONLY | FB_VMODE_Y24:
 					tegra_dc_writel(dc,
 						RGB_TO_YUV420_8BPC_BLACK_PIX,
 						DC_DISP_BLEND_BACKGROUND_COLOR);
-				else if (dc->mode.vmode &
-					(FB_VMODE_Y422 | FB_VMODE_Y30))
+					break;
+				case FB_VMODE_Y422 | FB_VMODE_Y30:
 					tegra_dc_writel(dc,
 						RGB_TO_YUV422_10BPC_BLACK_PIX,
 						DC_DISP_BLEND_BACKGROUND_COLOR);
+					break;
+				case FB_VMODE_Y444 | FB_VMODE_Y24:
+					tegra_dc_writel(dc,
+						RGB_TO_YUV444_8BPC_BLACK_PIX,
+						DC_DISP_BLEND_BACKGROUND_COLOR);
+					break;
+				}
 			}
 			continue;
 
+		#undef RGB_TO_YUV444_8BPC_BLACK_PIX
 		#undef RGB_TO_YUV422_10BPC_BLACK_PIX
 		#undef RGB_TO_YUV420_8BPC_BLACK_PIX
 		}
@@ -1040,6 +1050,13 @@ static int _tegra_dc_program_windows(struct tegra_dc *dc,
 
 	if (dc->out->flags & TEGRA_DC_OUT_ONE_SHOT_MODE)
 		update_mask |= NC_HOST_TRIG;
+
+	val = tegra_dc_readl(dc, DC_DISP_DISP_COLOR_CONTROL);
+	if (!!(val & CMU_ENABLE) != (!dc->yuv_bypass && dc->cmu_enabled)) {
+		val ^= CMU_ENABLE;
+		tegra_dc_writel(dc, val, DC_DISP_DISP_COLOR_CONTROL);
+		update_mask |= GENERAL_ACT_REQ;
+	}
 
 	tegra_dc_writel(dc, update_mask, DC_CMD_STATE_CONTROL);
 
