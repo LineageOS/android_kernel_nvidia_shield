@@ -2267,6 +2267,7 @@ int
 dhd_wlfc_init(dhd_pub_t *dhd)
 {
 	char iovbuf[12]; /* Room for "tlv" + '\0' + parameter */
+	int ret = 0;
 	/* enable all signals & indicate host proptxstatus logic is active */
 	uint32 tlv = dhd->wlfc_enabled?
 		WLFC_FLAGS_RSSI_SIGNALS |
@@ -2283,8 +2284,9 @@ dhd_wlfc_init(dhd_pub_t *dhd)
 	*/
 
 	/* enable proptxtstatus signaling by default */
-	bcm_mkiovar("tlv", (char *)&tlv, 4, iovbuf, sizeof(iovbuf));
-	if (dhd_wl_ioctl_cmd(dhd, WLC_SET_VAR, iovbuf, sizeof(iovbuf), TRUE, 0) < 0) {
+	ret = dhd_iovar(dhd, 0, "tlv", (char *)&tlv, sizeof(tlv), NULL, 0,
+			TRUE);
+	if (ret < 0) {
 		DHD_ERROR(("dhd_wlfc_init(): failed to enable/disable bdcv2 tlv signaling\n"));
 	}
 	else {
