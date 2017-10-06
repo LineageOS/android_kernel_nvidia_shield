@@ -85,7 +85,7 @@ static char *nvdec_get_fw_name(struct platform_device *dev, int fw)
 		return NULL;
 
 	decode_nvdec_ver(pdata->version, &maj, &min);
-	if (IS_ENABLED(CONFIG_NVDEC_BOOTLOADER)) {
+	if (IS_ENABLED(CONFIG_NVDEC_BOOTLOADER) && !of_machine_is_compatible("nvidia,loki-e")) {
 		if (debug_mode) {
 			if (fw == host_nvdec_fw_bl) {
 				if (tegra_platform_is_qt() ||
@@ -229,7 +229,7 @@ int nvhost_nvdec_finalize_poweron(struct platform_device *dev)
 	err = nvdec_wait_mem_scrubbing(dev);
 	if (err)
 		return err;
-	if (IS_ENABLED(CONFIG_NVDEC_BOOTLOADER)) {
+	if (IS_ENABLED(CONFIG_NVDEC_BOOTLOADER) && !of_machine_is_compatible("nvidia,loki-e")) {
 
 		u32 fb_data_offset = 0;
 		u32 initial_dmem_offset = 0;
@@ -312,7 +312,7 @@ int nvhost_nvdec_finalize_poweron(struct platform_device *dev)
 		return err;
 	}
 
-	if (IS_ENABLED(CONFIG_NVDEC_BOOTLOADER)) {
+	if (IS_ENABLED(CONFIG_NVDEC_BOOTLOADER) && !of_machine_is_compatible("nvidia,loki-e")) {
 		u32 debuginfo = host1x_readl(dev, nvdec_debuginfo_r());
 
 		/* Must be zero for successful boot */
@@ -483,7 +483,7 @@ static int nvhost_nvdec_init_sw(struct platform_device *dev)
 		err = -EINVAL;
 		goto error_fw_name;
 	}
-	if (IS_ENABLED(CONFIG_NVDEC_BOOTLOADER)) {
+	if (IS_ENABLED(CONFIG_NVDEC_BOOTLOADER) && !of_machine_is_compatible("nvidia,loki-e")) {
 		fw_name[1] = nvdec_get_fw_name(dev, host_nvdec_fw_ls);
 		if (!fw_name[1]) {
 			dev_err(&dev->dev, "couldn't determine LS fw name");
@@ -492,7 +492,7 @@ static int nvhost_nvdec_init_sw(struct platform_device *dev)
 		}
 	}
 
-	for (i = 0; i < (1 + IS_ENABLED(CONFIG_NVDEC_BOOTLOADER)); i++) {
+	for (i = 0; i < (1 + (IS_ENABLED(CONFIG_NVDEC_BOOTLOADER) && !of_machine_is_compatible("nvidia,loki-e"))); i++) {
 		m[i] = kzalloc(sizeof(struct nvdec), GFP_KERNEL);
 		if (!m[i]) {
 			dev_err(&dev->dev, "couldn't alloc ucode");
