@@ -148,121 +148,8 @@ static struct platform_device power_supply_extcon_device = {
 	},
 };
 
-/************************ LOKI CL-DVFS DATA *********************/
-#define LOKI_CPU_VDD_MAP_SIZE		33
 #define LOKI_CPU_VDD_MIN_UV		703000
 #define LOKI_CPU_VDD_STEP_UV		19200
-#define LOKI_CPU_VDD_STEP_US		80
-#define LOKI_CPU_VDD_BOOT_UV		1000000
-
-#ifdef CONFIG_ARCH_TEGRA_HAS_CL_DVFS
-/* loki board parameters for cpu dfll */
-static struct tegra_cl_dvfs_cfg_param loki_cl_dvfs_param = {
-	.sample_rate = 50000,
-
-	.force_mode = TEGRA_CL_DVFS_FORCE_FIXED,
-	.cf = 10,
-	.ci = 0,
-	.cg = 2,
-
-	.droop_cut_value = 0xF,
-	.droop_restore_ramp = 0x0,
-	.scale_out_ramp = 0x0,
-};
-
-/* loki dfll bypass device for legacy dvfs control */
-static struct regulator_consumer_supply loki_dfll_bypass_consumers[] = {
-	REGULATOR_SUPPLY("vdd_cpu", NULL),
-};
-DFLL_BYPASS(loki,
-	    LOKI_CPU_VDD_MIN_UV, LOKI_CPU_VDD_STEP_UV, LOKI_CPU_VDD_BOOT_UV,
-	    LOKI_CPU_VDD_MAP_SIZE, LOKI_CPU_VDD_STEP_US, -1);
-
-static struct tegra_cl_dvfs_platform_data loki_cl_dvfs_data = {
-	.dfll_clk_name = "dfll_cpu",
-	.pmu_if = TEGRA_CL_DVFS_PMU_PWM,
-	.u.pmu_pwm = {
-		.pwm_rate = 12750000,
-		.min_uV = LOKI_CPU_VDD_MIN_UV,
-		.step_uV = LOKI_CPU_VDD_STEP_UV,
-		.pwm_bus = TEGRA_CL_DVFS_PWM_1WIRE_BUFFER,
-		.out_gpio = TEGRA_GPIO_PU6,
-		.out_enable_high = false,
-#ifdef CONFIG_REGULATOR_TEGRA_DFLL_BYPASS
-		.dfll_bypass_dev = &loki_dfll_bypass_dev,
-#endif
-	},
-
-	.cfg_param = &loki_cl_dvfs_param,
-};
-
-static void loki_suspend_dfll_bypass(void)
-{
-/* tristate external PWM buffer */
-	if (gpio_is_valid(loki_cl_dvfs_data.u.pmu_pwm.out_gpio))
-		__gpio_set_value(loki_cl_dvfs_data.u.pmu_pwm.out_gpio, 1);
-}
-
-static void loki_resume_dfll_bypass(void)
-{
-/* enable PWM buffer operations */
-	if (gpio_is_valid(loki_cl_dvfs_data.u.pmu_pwm.out_gpio))
-		__gpio_set_value(loki_cl_dvfs_data.u.pmu_pwm.out_gpio, 0);
-}
-static int __init loki_cl_dvfs_init(void)
-{
-	struct tegra_cl_dvfs_platform_data *data = NULL;
-	struct board_info bi;
-
-	tegra_get_board_info(&bi);
-	if (bi.board_id == BOARD_P2530 && bi.fab >= 0xc0) {
-		loki_cl_dvfs_data.u.pmu_pwm.out_gpio =  -1;
-		loki_cl_dvfs_data.u.pmu_pwm.pwm_bus =
-			TEGRA_CL_DVFS_PWM_1WIRE_DIRECT;
-	}
-
-	{
-		data = &loki_cl_dvfs_data;
-
-		data->u.pmu_pwm.pinctrl_dev = tegra_get_pinctrl_device_handle();
-		if (!data->u.pmu_pwm.pinctrl_dev) {
-			pr_err("%s: Tegra pincontrol driver not found\n",
-				__func__);
-			return -EINVAL;
-		}
-
-		data->u.pmu_pwm.pwm_pingroup =
-			pinctrl_get_selector_from_group_name(
-				data->u.pmu_pwm.pinctrl_dev, "dvfs_pwm_px0");
-		if (data->u.pmu_pwm.pwm_pingroup < 0) {
-			pr_err("%s: Tegra pin dvfs_pwm_px0 not found\n",
-				__func__);
-			return -EINVAL;
-		}
-
-		if (data->u.pmu_pwm.dfll_bypass_dev) {
-			/* this has to be exact to 1uV level from table */
-			loki_suspend_data.suspend_dfll_bypass =
-				loki_suspend_dfll_bypass;
-			loki_suspend_data.resume_dfll_bypass =
-				loki_resume_dfll_bypass;
-			platform_device_register(
-				data->u.pmu_pwm.dfll_bypass_dev);
-		} else {
-			(void)loki_dfll_bypass_dev;
-		}
-	}
-
-	data->flags = TEGRA_CL_DVFS_DYN_OUTPUT_CFG;
-	tegra_cl_dvfs_device.dev.platform_data = data;
-	platform_device_register(&tegra_cl_dvfs_device);
-	return 0;
-}
-#else
-static inline int loki_cl_dvfs_init()
-{ return 0; }
-#endif
-
 int __init loki_rail_alignment_init(void)
 {
 #ifdef CONFIG_ARCH_TEGRA_13x_SOC
@@ -279,7 +166,6 @@ int __init loki_regulator_init(void)
 {
 	platform_device_register(&power_supply_extcon_device);
 
-	loki_cl_dvfs_init();
 	return 0;
 }
 
