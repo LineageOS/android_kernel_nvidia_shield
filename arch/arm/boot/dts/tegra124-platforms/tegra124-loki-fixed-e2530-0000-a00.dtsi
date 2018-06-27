@@ -5,5 +5,13 @@
 		regulator@2 {
 			gpio = <&gpio TEGRA_GPIO(FF, 0) 0>;
 		};
+		vdd_fan_dummy: regulator_dummy {
+			compatible = "regulator-fixed";
+			regulator-name = "vdd-fan";
+		};
+	};
+
+	pwm-fan {
+		vdd-fan-supply = <&vdd_fan_dummy>;
 	};
 };
