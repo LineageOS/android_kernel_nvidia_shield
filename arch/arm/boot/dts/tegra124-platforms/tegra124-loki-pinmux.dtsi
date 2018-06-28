@@ -1159,7 +1159,7 @@
 
 			dap_mclk1_req_pee2 {
 				nvidia,pins = "dap_mclk1_req_pee2";
-				nvidia,function = "safe";
+				nvidia,function = "dap";
 				nvidia,enable-input = <TEGRA_PIN_DISABLE>;
 				nvidia,pull = <TEGRA_PIN_PULL_DOWN>;
 				nvidia,tristate = <TEGRA_PIN_DISABLE>;
@@ -1167,7 +1167,7 @@
 
 			pff2 {
 				nvidia,pins = "pff2";
-				nvidia,function = "safe";
+				nvidia,function = "rsvd2";
 				nvidia,enable-input = <TEGRA_PIN_DISABLE>;
 				nvidia,pull = <TEGRA_PIN_PULL_DOWN>;
 				nvidia,tristate = <TEGRA_PIN_DISABLE>;
@@ -1175,7 +1175,7 @@
 
 			dap1_dout_pn2 {
 				nvidia,pins = "dap1_dout_pn2";
-				nvidia,function = "safe";
+				nvidia,function = "i2s0";
 				nvidia,enable-input = <TEGRA_PIN_DISABLE>;
 				nvidia,pull = <TEGRA_PIN_PULL_DOWN>;
 				nvidia,tristate = <TEGRA_PIN_DISABLE>;
@@ -1228,8 +1228,8 @@
 				nvidia,pins = "drive_dap4";
 				nvidia,high-speed-mode = <TEGRA_PIN_ENABLE>;
 				nvidia,schmitt = <TEGRA_PIN_DISABLE>;
-				nvidia,pull-down-strength = <54>;
-				nvidia,pull-up-strength = <40>;
+				nvidia,pull-down-strength = <31>;
+				nvidia,pull-up-strength = <23>;
 				nvidia,slew-rate-rising = <TEGRA_PIN_SLEW_RATE_FASTEST>;
 				nvidia,slew-rate-falling = <TEGRA_PIN_SLEW_RATE_FASTEST>;
 			};
