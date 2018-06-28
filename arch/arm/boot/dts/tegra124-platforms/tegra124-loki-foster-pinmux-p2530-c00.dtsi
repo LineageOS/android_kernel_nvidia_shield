@@ -11,7 +11,7 @@
 		pinmux_default: common {
 				spdif_out_pk5 {
 				nvidia,pins = "spdif_out_pk5";
-				nvidia,function = "safe";
+				nvidia,function = "spdif";
 				nvidia,enable-input = <TEGRA_PIN_DISABLE>;
 				nvidia,pull = <TEGRA_PIN_PULL_NONE>;
 				nvidia,tristate = <TEGRA_PIN_DISABLE>;
