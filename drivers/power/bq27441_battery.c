@@ -1332,6 +1332,12 @@ static int bq27441_probe(struct i2c_client *client,
 		goto error;
 	}
 
+	ret = power_supply_register(&client->dev, &chip->battery);
+	if (ret) {
+		dev_err(&client->dev, "failed: power supply register\n");
+		goto error;
+	}
+
 	bq27441_bgi.tz_name = chip->pdata->tz_name;
 
 	chip->bg_dev = battery_gauge_register(&client->dev, &bq27441_bgi,
@@ -1341,12 +1347,6 @@ static int bq27441_probe(struct i2c_client *client,
 		dev_err(&client->dev, "battery gauge register failed: %d\n",
 			ret);
 		goto bg_err;
-	}
-
-	ret = power_supply_register(&client->dev, &chip->battery);
-	if (ret) {
-		dev_err(&client->dev, "failed: power supply register\n");
-		goto error;
 	}
 
 	ret = bq27441_initialize(chip);
