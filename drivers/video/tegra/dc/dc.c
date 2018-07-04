@@ -4126,7 +4126,7 @@ static bool _tegra_dc_controller_enable(struct tegra_dc *dc)
 
 	if (dc->out->type != TEGRA_DC_OUT_DP) {
 #if !defined(CONFIG_ARCH_TEGRA_21x_SOC)
-		int sor_num = tegra_dc_which_sor(dc);
+		int sor_num = of_machine_is_compatible("nvidia,loki") ? dc->ndev->id : tegra_dc_which_sor(dc);
 		np_dpaux = of_find_node_by_path(
 				sor_num ? DPAUX1_NODE : DPAUX_NODE);
 		if (np_dpaux || !dc->ndev->dev.of_node)
