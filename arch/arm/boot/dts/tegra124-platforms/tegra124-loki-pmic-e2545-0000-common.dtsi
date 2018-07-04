@@ -353,16 +353,10 @@
 						};
 					};
 
-					palmas_ldo4: ldo4 {
+					vpp_fuse: ldo4 {
 						regulator-name = "vpp-fuse";
 						regulator-min-microvolt = <1800000>;
 						regulator-max-microvolt = <1800000>;
-
-						consumers {
-							c0 {
-								regulator-consumer-supply = "vpp_fuse";
-							};
-						};
 					};
 
 					palmas_ldo6: ldo6 {
