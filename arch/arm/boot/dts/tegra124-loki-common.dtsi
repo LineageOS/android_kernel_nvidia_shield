@@ -93,7 +93,9 @@
 				};
 			};
 
-			charger {
+			battery_charger: charger {
+				status = "disabled";
+				dt-override-status-odm-data = <0x00C00000 0x00400000>;
 				regulator-name = "batt_regulator";
 				regulator-max-microamp = <3000000>;
 				ti,watchdog-timeout = <160>;
@@ -122,8 +124,12 @@
 		};
 
 		battery-gauge@55 {
+			status = "disabled";
+			dt-override-status-odm-data = <0x00C00000 0x00400000>;
 			compatible = "ti,bq27441";
 			reg = <0x55>;
+			interrupt-parent = <&gpio>;
+			interrupts = <TEGRA_GPIO(Q, 5) 0x0>;
 			ti,design-capacity = <7800>;
 			ti,design-energy = <28314>;
 			ti,taper-rate = <167>;
