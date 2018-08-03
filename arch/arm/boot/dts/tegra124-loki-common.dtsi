@@ -18,6 +18,7 @@
 #include <tegra124-platforms/tegra124-loki-gpio-default.dtsi>
 #include <tegra124-platforms/tegra124-loki-pinmux.dtsi>
 #include <tegra124-platforms/tegra124-loki-camera-a00.dtsi>
+#include "tegra124-platforms/tegra124-loki-comms.dtsi"
 #include "tegra124-platforms/tegra124-loki-pwm-fan.dtsi"
 #include "tegra124-platforms/tegra124-loki-sensor.dtsi"
 #include "tegra124-platforms/tegra124-loki-thermal-fan-est.dtsi"
