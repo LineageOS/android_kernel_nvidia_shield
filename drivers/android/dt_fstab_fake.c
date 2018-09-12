@@ -16,6 +16,16 @@
 #include <linux/string.h>
 #include <linux/proc_fs.h>
 #include <linux/seq_file.h>
+#include <linux/of.h>
+
+static bool is_sata = false;
+static int __init tegraboot_fstab_setup(char *p)
+{
+	if (!strncmp(p, "sata", 5))
+		is_sata = true;
+	return 0;
+}
+early_param("tegraboot", tegraboot_fstab_setup);
 
 #define DT_FILE_INIT(_name, _contents) \
 static int dt_show_##_name (struct seq_file *m, void *v) \
@@ -85,6 +95,10 @@ DT_REMOVE("device-tree/firmware/android/fstab/"#_name)
 DT_FILE_INIT(fstab_compatible, "android,fstab")
 DT_FILE_INIT(fstab_name, "fstab")
 
+static char blockdevice[50];
+DT_PARTITION_INIT(system, blockdevice, "wait", "ro", "ext4")
+DT_PARTITION_INIT(vendor, blockdevice, "wait", "ro", "ext4")
+
 static int __init dt_fstab_proc_init(void)
 {
 	// Setup basic hierarchy
@@ -92,11 +106,31 @@ static int __init dt_fstab_proc_init(void)
 	DT_FILE_CREATE(fstab_compatible, "device-tree/firmware/android/fstab/compatible")
 	DT_FILE_CREATE(fstab_name, "device-tree/firmware/android/fstab/name")
 
+	if (is_sata || of_machine_is_compatible("nvidia,foster_e_hdd"))
+		strcpy(blockdevice, "/dev/block/platform/tegra-sata.0/by-name/");
+	else
+		strcpy(blockdevice, "/dev/block/platform/sdhci-tegra.3/by-name/");
+
+	// TODO: Check for existence of vendor partition
+	if (of_machine_is_compatible("nvidia,tegra124")) {
+		strcat(blockdevice, "APP");
+		DT_PARTITION_CREATE(system)
+	} else {
+		strcat(blockdevice, "vendor");
+		DT_PARTITION_CREATE(vendor)
+	}
+
 	return 0;
 }
 
 static void __exit dt_fstab_proc_exit(void)
 {
+	if (of_machine_is_compatible("nvidia,tegra124")) {
+		DT_PARTITION_REMOVE(system)
+	} else {
+		DT_PARTITION_REMOVE(vendor)
+	}
+
 	// Cleanup basic hierarchy
 	DT_REMOVE("device-tree/firmware/android/fstab/name")
 	DT_REMOVE("device-tree/firmware/android/fstab/compatible")
