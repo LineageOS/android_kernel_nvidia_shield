@@ -1819,7 +1819,7 @@ CONFIG_BCMDHD88=y
 # CONFIG_BCM4335 is not set
 # CONFIG_BCM4350 is not set
 CONFIG_BCMDHD88_FW_PATH="/system/vendor/firmware/fw_bcmdhd.bin"
-CONFIG_BCMDHD88_NVRAM_PATH="/system/vendor/firmware/nvram_43241.txt"
+CONFIG_BCMDHD88_NVRAM_PATH="/system/vendor/firmware/nvram.txt"
 CONFIG_BCMDHD88_HW_OOB=y
 CONFIG_BCMDHD88_INSMOD_NO_FW_LOAD=y
 # CONFIG_BCMDHD88_DISABLE_P2P_SYSFS_DEVICE_NODE is not set
