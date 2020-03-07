@@ -40,8 +40,6 @@
 					TEGRA_GPIO(X, 1)
 					TEGRA_GPIO(BB, 3)
 					TEGRA_GPIO(BB, 6)
-					TEGRA_GPIO(H, 2)
-					TEGRA_GPIO(H, 3)
 					TEGRA_GPIO(H, 5)
 					TEGRA_GPIO(H, 6)
 					TEGRA_GPIO(H, 7)
@@ -60,10 +58,13 @@
 					TEGRA_GPIO(EE, 1)
 					TEGRA_GPIO(U, 1)
 					TEGRA_GPIO(K, 5)>;
-			gpio-output-high = <TEGRA_GPIO(K, 0)
+			gpio-output-high = <TEGRA_GPIO(H, 2)
+					TEGRA_GPIO(H, 3)
+					TEGRA_GPIO(K, 0)
 					TEGRA_GPIO(Q, 7)
 					TEGRA_GPIO(V, 3)
 					TEGRA_GPIO(R, 5)
+					TEGRA_GPIO(U, 4)
 					TEGRA_GPIO(U, 6)>;
 		};
 	};
