@@ -354,7 +354,7 @@ static int loki_wifi_reset(int on)
 	return 0;
 }
 
-#define LOKI_WIFI_MAC_ADDR_FILE	"/mnt/factory/wifi/wifi_mac.txt"
+#define LOKI_WIFI_MAC_ADDR_FILE	"/mnt/vendor/factory/wifi/wifi_mac.txt"
 
 static int loki_wifi_get_mac_addr(unsigned char *buf)
 {
