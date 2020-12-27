@@ -51,6 +51,10 @@
 	compatible = "nvidia,loki-e", "nvidia,tegra210";
 	nvidia,fastboot-usb-pid = <0xb420>;
 
+	chosen {
+		bootargs = "androidboot.secureos=tlk root=/dev/mmcblk0p19 rootwait rootfstype=ext4 init=/init";
+	};
+
 	firmware {
 		android {
 			compatible = "android,firmware";
