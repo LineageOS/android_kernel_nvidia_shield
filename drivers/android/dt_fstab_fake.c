@@ -121,7 +121,6 @@ static int __init dt_fstab_proc_init(void)
 	if (of_machine_is_compatible("nvidia,tegra124")) {
 		DT_PARTITION_CREATE(system)
 	} else {
-		DT_PARTITION_CREATE(system)
 		DT_PARTITION_CREATE(vendor)
 	}
 
@@ -133,7 +132,6 @@ static void __exit dt_fstab_proc_exit(void)
 	if (of_machine_is_compatible("nvidia,tegra124")) {
 		DT_PARTITION_REMOVE(system)
 	} else {
-		DT_PARTITION_REMOVE(system)
 		DT_PARTITION_REMOVE(vendor)
 	}
 
