@@ -32,7 +32,7 @@
 		status = "okay";
 		/* wifi MAC address */
 		mac-address-chosen-dtb-node = "nvidia,wifi-mac";
-		mac-address-file = "/mnt/factory/wifi/wifi_mac.txt";
+		mac-address-file = "/mnt/vendor/factory/wifi/wifi_mac.txt";
 	};
 
 	bcm4329_wlan2_ {
