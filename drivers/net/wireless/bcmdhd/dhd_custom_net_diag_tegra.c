@@ -186,7 +186,7 @@ void tegra_net_diag_get_value(tegra_net_diag_data_t *net_diag_data)
 {
 	TEGRA_NET_DIAG_DEBUG("%s\n", __func__);
 
-	memset(&tegra_net_diag_data , 0, sizeof(tegra_net_diag_data_t));
+	memset(&tegra_net_diag_data, 0, sizeof(tegra_net_diag_data_t));
 
 	/* start network diagnostics work */
 	tegra_net_diag_work_start();
@@ -288,7 +288,7 @@ tegra_net_diag_store(struct device *dev,
 	return count;
 }
 
-static DEVICE_ATTR(net_diag, S_IRUGO | S_IWUGO,
+static DEVICE_ATTR(net_diag, S_IRUGO | S_IWUSR,
 	tegra_net_diag_show,
 	tegra_net_diag_store);
 

@@ -3,7 +3,7 @@
  *
  * NVIDIA Tegra Sysfs for BCMDHD driver
  *
- * Copyright (C) 2014-2016 NVIDIA Corporation. All rights reserved.
+ * Copyright (C) 2014-2019 NVIDIA Corporation. All rights reserved.
  *
  * This software is licensed under the terms of the GNU General Public
  * License version 2, as published by the Free Software Foundation, and
@@ -131,6 +131,8 @@ stat_work_func(struct work_struct *work)
 	struct timespec now;
 #ifdef CONFIG_BCMDHD_CUSTOM_NET_BW_EST_TEGRA
 	tegra_net_diag_data_t net_diag_data;
+	int bwValue;
+	int roundOffBw;
 #endif
 	get_monotonic_boottime(&now);
 
@@ -179,8 +181,8 @@ stat_work_func(struct work_struct *work)
 		memset(&net_diag_data, 0, sizeof(tegra_net_diag_data_t));
 		tegra_net_diag_get_value(&net_diag_data);
 		bcmdhd_stat.driver_stat.cur_bw_est = net_diag_data.bw_est;
-		int bwValue = net_diag_data.bw_est;
-		int roundOffBw = 0;
+		bwValue = net_diag_data.bw_est;
+		roundOffBw = 0;
 		if (bwValue < 1024) {
 			roundOffBw = (bwValue * 100) / 100;
 		} else if (bwValue < 1048576) {
@@ -188,16 +190,15 @@ stat_work_func(struct work_struct *work)
 		} else if (bwValue < 1073741824) {
 			roundOffBw = ((bwValue/1048576) * 100) / 100;
 		} else {
-			roundOffBw =((bwValue/1073741824) * 100) / 100;
+			roundOffBw = ((bwValue/1073741824) * 100) / 100;
 		}
-		pr_info("##OMP bw %d %s\n", roundOffBw, __func__);
-		if (roundOffBw < 10) {
+		if (roundOffBw <= 10) {
 			bcmdhd_stat.driver_stat.bw_est_level_0++;
-		} else if (roundOffBw < 50 ) {
+		} else if (roundOffBw <= 50) {
 			bcmdhd_stat.driver_stat.bw_est_level_1++;
-		} else if (roundOffBw < 100) {
+		} else if (roundOffBw <= 100) {
 			bcmdhd_stat.driver_stat.bw_est_level_2++;
-		} else if (roundOffBw < 300) {
+		} else if (roundOffBw <= 300) {
 			bcmdhd_stat.driver_stat.bw_est_level_3++;
 		} else if (roundOffBw > 300) {
 			bcmdhd_stat.driver_stat.bw_est_level_4++;
@@ -264,7 +265,7 @@ tegra_sysfs_histogram_stat_show(struct device *dev,
 	snprintf(buf + n, PAGE_SIZE - n,
 		"{\n"
 #ifdef CONFIG_BCMDHD_CUSTOM_NET_BW_EST_TEGRA
-		"\"version\": 3.2,\n"
+		"\"version\": 3.3,\n"
 #else
 		"\"version\": 3,\n"
 #endif /* CONFIG_BCMDHD_CUSTOM_NET_BW_EST_TEGRA */
@@ -285,7 +286,8 @@ tegra_sysfs_histogram_stat_show(struct device *dev,
 		"\"hang\": %lu,\n"
 		"\"ago_start\": %lu,\n"
 		"\"connect_on_2g_channel\": %lu,\n"
-		"\"connect_on_5g_channel\": %lu,\n",
+		"\"connect_on_5g_channel\": %lu,\n"
+		"\"skb_realloc_headroom_fail\": %lu,\n",
 		MSEC(dhdstats_ts),
 		MSEC(now),
 		PRINT_DIFF(gen_stat.wifi_on_success),
@@ -303,7 +305,8 @@ tegra_sysfs_histogram_stat_show(struct device *dev,
 		PRINT_DIFF(gen_stat.hang),
 		PRINT_DIFF(gen_stat.ago_start),
 		PRINT_DIFF(gen_stat.connect_on_2g_channel),
-		PRINT_DIFF(gen_stat.connect_on_5g_channel));
+		PRINT_DIFF(gen_stat.connect_on_5g_channel),
+		PRINT_DIFF(gen_stat.skb_realloc_headroom_fail));
 
 	/* print statistics */
 	n = strlen(buf);
@@ -432,7 +435,7 @@ tegra_sysfs_histogram_stat_show(struct device *dev,
 		"\"bw_est_level_3\": %lu,\n"
 		"\"bw_est_level_4\": %lu,\n"
 		"\"cur_mode\": \"%s\",\n"
-		"\"cur_channel_width\": %lu,\n"
+		"\"cur_channel_width\": %d,\n"
 #endif /* CONFIG_BCMDHD_CUSTOM_NET_BW_EST_TEGRA */
 		"\"aggr_not_assoc_err\": %lu,\n"
 		"\"cur_country_code\": \"%s\"\n"

@@ -3,7 +3,7 @@
  *
  * NVIDIA Tegra Sysfs for BCMDHD driver
  *
- * Copyright (C) 2014-2016 NVIDIA Corporation. All rights reserved.
+ * Copyright (C) 2014-2019 NVIDIA Corporation. All rights reserved.
  *
  * This software is licensed under the terms of the GNU General Public
  * License version 2, as published by the Free Software Foundation, and
@@ -74,7 +74,7 @@
 #define TEGRA_SYSFS_HISTOGRAM_STAT_UPDATE_4WHS()\
 	do {\
 		if (wifi_stat_debug) \
-			pr_info("wifi stat: %s(%d): 4WHS counter update \n"); \
+			pr_info("wifi stat: 4WHS counter update \n"); \
 		if (eapol_message_3_retry != -1) { \
 			if (eapol_message_1_retry > 0) \
 				bcmdhd_stat.gen_stat.eapol_message_1_retry += eapol_message_1_retry;\
@@ -91,7 +91,7 @@
 #define TEGRA_SYSFS_HISTOGRAM_STAT_RESET_4WHS()\
 	do {\
 		if (wifi_stat_debug) \
-			pr_info("wifi stat: %s(%d): 4WHS counter reset \n"); \
+			pr_info("wifi stat:4WHS counter reset \n"); \
 		eapol_message_1_retry = -1;\
 		eapol_message_2_retry = -1;\
 		eapol_message_3_retry = -1;\
@@ -286,6 +286,7 @@ typedef struct tegra_sysfs_stat_generic {
 	unsigned long eapol_message_4_retry;
 
 	int ccode_sig_fail[SIG_FAIL_REASONS];
+	unsigned long skb_realloc_headroom_fail;
 } tegra_sysfs_stat_generic_t;
 
 typedef struct tegra_sysfs_stat_firmware {

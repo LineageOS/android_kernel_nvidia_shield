@@ -541,7 +541,7 @@ tegra_net_bw_est_store(struct device *dev,
 	return count;
 }
 
-static DEVICE_ATTR(net_bw_est, S_IRUGO | S_IWUGO,
+static DEVICE_ATTR(net_bw_est, S_IRUGO | S_IWUSR,
 	tegra_net_bw_est_show,
 	tegra_net_bw_est_store);
 
