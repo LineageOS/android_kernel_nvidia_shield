@@ -568,9 +568,10 @@
 	};
 
 	bcmdhd_wlan {
-		fw_path = "/vendor/firmware/fw_bcmdhd_loki.bin";
+		fw_path = "/vendor/firmware/fw_bcmdhd.bin";
 		nv_path = "/vendor/firmware/nvram_loki_e_4354.txt";
 		tuned_nv_path = "/vendor/firmware/nvram_loki_e_antenna_tuned_4354.txt";
+		clm_blob_path = "/vendor/firmware/bcmdhd_clm_loki.blob";
 		country_code_map {
 			CC1 {
 				iso_abbrev = "XV";
