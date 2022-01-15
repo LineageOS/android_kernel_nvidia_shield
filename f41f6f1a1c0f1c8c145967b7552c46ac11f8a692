@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "fe9ef87e_f7142f18",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 14048
+      },
+      "writtenOn": "2022-01-15T23:38:47Z",
+      "side": 1,
+      "message": "Chain verified for t210 on loki_e_wifi.",
+      "revId": "f41f6f1a1c0f1c8c145967b7552c46ac11f8a692",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71"
+    }
+  ]
+}
