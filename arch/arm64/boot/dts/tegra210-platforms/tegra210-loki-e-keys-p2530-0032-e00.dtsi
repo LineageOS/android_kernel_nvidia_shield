@@ -4,7 +4,7 @@
 / {
 	gpio-keys {
 		compatible = "gpio-keys";
-		gpio-keys,name = "gpio-keys";
+		gpio-keys,name = "gpio-keys-loki";
 		status = "okay";
 		disable-on-recovery-kernel;
 
