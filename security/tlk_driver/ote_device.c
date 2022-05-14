@@ -559,8 +559,10 @@ static struct device_node *get_tlk_device_node(void)
 
 	node = of_find_compatible_node(NULL, NULL,
 			"nvidia,trusted-little-kernel");
+	if (node && !of_device_is_available(node))
+		node = NULL;
 	if (!node)
-		pr_info("TLK node not present in the FDT\n");
+		pr_info("TLK node not present and enabled in the FDT\n");
 
 	return node;
 }
