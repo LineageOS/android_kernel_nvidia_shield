@@ -52,7 +52,7 @@
 	nvidia,fastboot-usb-pid = <0xb420>;
 
 	chosen {
-		bootargs = "androidboot.secureos=tlk root=/dev/mmcblk0p19 rootwait rootfstype=ext4 init=/init";
+		bootargs = "androidboot.secureos=none root=/dev/mmcblk0p19 rootwait rootfstype=ext4 init=/init";
 	};
 
 	firmware {
@@ -60,6 +60,10 @@
 			compatible = "android,firmware";
 			hardware = "loki_e";
 		};
+	};
+
+	tlk {
+		status = "disabled";
 	};
 
 	pmc@7000e400 {
